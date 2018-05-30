@@ -41,5 +41,6 @@ data class ComposeState(
         val attachments: List<Attachment> = ArrayList(),
         val attaching: Boolean = false,
         val remaining: String = "",
+        val simSlot: Int = -1,
         val canSend: Boolean = false
 )

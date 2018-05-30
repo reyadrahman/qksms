@@ -197,6 +197,9 @@ class ComposeActivity : QkThemedActivity(), ComposeView {
         counter.text = state.remaining
         counter.setVisible(counter.text.isNotBlank())
 
+        simIndex.text = state.simSlot.toString()
+        simIndex.setVisible(state.simSlot != -1)
+
         send.isEnabled = state.canSend
         send.imageAlpha = if (state.canSend) 255 else 128
     }

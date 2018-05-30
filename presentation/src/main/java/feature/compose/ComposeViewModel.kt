@@ -23,6 +23,7 @@ import android.content.Intent
 import android.net.Uri
 import android.telephony.PhoneNumberUtils
 import android.telephony.SmsMessage
+import android.telephony.SubscriptionManager
 import android.view.inputmethod.EditorInfo
 import com.moez.QKSMS.R
 import com.uber.autodispose.android.lifecycle.scope
@@ -80,7 +81,10 @@ class ComposeViewModel @Inject constructor(
         private val retrySending: RetrySending,
         private val sendMessage: SendMessage,
         private val syncContacts: ContactSync
-) : QkViewModel<ComposeView, ComposeState>(ComposeState(query = intent.extras?.getString("query") ?: "")) {
+) : QkViewModel<ComposeView, ComposeState>(ComposeState(
+        query = intent.extras?.getString("query") ?: "",
+        simSlot = SubscriptionManager.from(context)?.activeSubscriptionInfoList?.get(0)?.simSlotIndex?.plus(1) ?: -1
+)) {
 
     private var sharedText: String = intent.extras?.getString(Intent.EXTRA_TEXT) ?: ""
     private val attachments: Subject<List<Attachment>> = BehaviorSubject.createDefault(ArrayList())
