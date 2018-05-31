@@ -182,8 +182,7 @@ class QkReplyViewModel @Inject constructor(
                     val addresses = conversation.recipients.map { it.address }
 
                     view.setDraft("")
-                    sendMessage.execute(SendMessage.Params(threadId, addresses, body, listOf())) {
-                    }
+                    sendMessage.execute(SendMessage.Params(-1, threadId, addresses, body, listOf()))
 
                     threadId
                 })

@@ -201,11 +201,7 @@ class ComposeViewModel @Inject constructor(
         }.subscribe()
 
         disposables += subscriptions
-                .map { list ->
-                    val subscription = list.takeIf { it.size > 1 }?.get(0)
-                    newState { it.copy(subscription = subscription) }
-                }
-                .subscribe()
+                .subscribe { list -> newState { it.copy(subscription = list.takeIf { it.size > 1 }?.get(0)) } }
 
         if (threadId == 0L) {
             syncContacts.execute(Unit)
@@ -523,10 +519,11 @@ class ComposeViewModel @Inject constructor(
         view.sendIntent
                 .withLatestFrom(view.textChangedIntent, { _, body -> body })
                 .map { body -> body.toString() }
-                .withLatestFrom(attachments, conversation, { body, attachments, conversation ->
+                .withLatestFrom(state, attachments, conversation, { body, state, attachments, conversation ->
+                    val subId = state.subscription?.subscriptionId ?: -1
                     val threadId = conversation.id
                     val addresses = conversation.recipients.map { it.address }
-                    sendMessage.execute(SendMessage.Params(threadId, addresses, body, attachments))
+                    sendMessage.execute(SendMessage.Params(subId, threadId, addresses, body, attachments))
                     view.setDraft("")
                     this.attachments.onNext(ArrayList())
                 })
