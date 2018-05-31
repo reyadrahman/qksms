@@ -57,6 +57,7 @@ import model.Message
 import model.PhoneNumber
 import repository.ContactRepository
 import repository.MessageRepository
+import util.activeSubscriptionObservable
 import util.extensions.asObservable
 import util.extensions.isImage
 import util.extensions.mapNotNull
@@ -81,10 +82,7 @@ class ComposeViewModel @Inject constructor(
         private val retrySending: RetrySending,
         private val sendMessage: SendMessage,
         private val syncContacts: ContactSync
-) : QkViewModel<ComposeView, ComposeState>(ComposeState(
-        query = intent.extras?.getString("query") ?: "",
-        simSlot = SubscriptionManager.from(context)?.activeSubscriptionInfoList?.get(0)?.simSlotIndex?.plus(1) ?: -1
-)) {
+) : QkViewModel<ComposeView, ComposeState>(ComposeState(query = intent.extras?.getString("query") ?: "")) {
 
     private var sharedText: String = intent.extras?.getString(Intent.EXTRA_TEXT) ?: ""
     private val attachments: Subject<List<Attachment>> = BehaviorSubject.createDefault(ArrayList())
@@ -95,6 +93,8 @@ class ComposeViewModel @Inject constructor(
     private val searchSelection: Subject<Long> = BehaviorSubject.createDefault(-1)
     private val conversation: Subject<Conversation> = BehaviorSubject.create()
     private val messages: Subject<List<Message>> = BehaviorSubject.create()
+
+    private val subscriptions = SubscriptionManager.from(context).activeSubscriptionObservable()
 
     init {
         // If there are any image attachments, we'll set those as the initial attachments for the
@@ -199,6 +199,13 @@ class ComposeViewModel @Inject constructor(
                 newState { it.copy(searchSelectionPosition = position, searchResults = messages.size) }
             }
         }.subscribe()
+
+        disposables += subscriptions
+                .map { list ->
+                    val subscription = list.takeIf { it.size > 1 }?.get(0)
+                    newState { it.copy(subscription = subscription) }
+                }
+                .subscribe()
 
         if (threadId == 0L) {
             syncContacts.execute(Unit)
@@ -497,6 +504,20 @@ class ComposeViewModel @Inject constructor(
                 .distinctUntilChanged()
                 .autoDisposable(view.scope())
                 .subscribe { remaining -> newState { it.copy(remaining = remaining) } }
+
+        // Toggle to the next sim slot
+        view.changeSimIntent
+                .withLatestFrom(subscriptions, state) { _, subs, state ->
+                    val subIndex = subs.indexOfFirst { it.subscriptionId == state.subscription?.subscriptionId }
+                    val subscription = when {
+                        subIndex == -1 -> null
+                        subIndex < subs.size - 1 -> subs[subIndex + 1]
+                        else -> subs[0]
+                    }
+                    newState { it.copy(subscription = subscription) }
+                }
+                .autoDisposable(view.scope())
+                .subscribe()
 
         // Send a message when the send button is clicked, and disable editing mode if it's enabled
         view.sendIntent

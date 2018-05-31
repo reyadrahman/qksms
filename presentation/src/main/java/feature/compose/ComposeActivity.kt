@@ -89,12 +89,13 @@ class ComposeActivity : QkThemedActivity(), ComposeView {
     override val galleryIntent by lazy { gallery.clicks() }
     override val attachmentSelectedIntent: Subject<Uri> = PublishSubject.create()
     override val inputContentIntent by lazy { message.inputContentSelected }
+    override val changeSimIntent by lazy { sim.clicks() }
     override val sendIntent by lazy { send.clicks() }
     override val backPressedIntent: Subject<Unit> = PublishSubject.create()
 
     private val viewModel by lazy { ViewModelProviders.of(this, viewModelFactory)[ComposeViewModel::class.java] }
 
-    var cameraDestination: Uri? = null
+    private var cameraDestination: Uri? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         AndroidInjection.inject(this)
@@ -197,8 +198,8 @@ class ComposeActivity : QkThemedActivity(), ComposeView {
         counter.text = state.remaining
         counter.setVisible(counter.text.isNotBlank())
 
-        simIndex.text = state.simSlot.toString()
-        simIndex.setVisible(state.simSlot != -1)
+        sim.setVisible(state.subscription != null)
+        simIndex.text = "${state.subscription?.simSlotIndex?.plus(1)}"
 
         send.isEnabled = state.canSend
         send.imageAlpha = if (state.canSend) 255 else 128
