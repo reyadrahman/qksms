@@ -115,7 +115,7 @@ class MessagesAdapter @Inject constructor(
     private val contactCache = ContactCache()
     private val expanded = HashMap<Long, Boolean>()
     private val disposables = CompositeDisposable()
-    private val subs = SubscriptionManager.from(context).activeSubscriptionInfoList
+    private val subs = SubscriptionManager.from(context).activeSubscriptionInfoList ?: listOf()
 
     var theme: Colors.Theme = colors.theme()
 
